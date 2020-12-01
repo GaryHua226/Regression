@@ -1,1 +1,1 @@
-profit
+df['Stkcd'] = df['Stkcd'].map(lambda x: (6-len(x))*'0' + x)

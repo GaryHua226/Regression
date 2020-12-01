@@ -1,11 +1,9 @@
 import pandas as pd
 
 class Factors:
-    def __init__(self, df):
-        self.df = df
-
-        # 数据类型转换为float
-        self.df[['Size','BM','OP','INV','Mretwd']]= df[['Size','BM','OP','INV','Mretwd']].values.astype(float)
+    def __init__(self):
+        self.df = pd.DataFrame()
+        self.Mretwd_df = pd.DataFrame()
 
         # 划分6个组合
         self.df_SL = pd.DataFrame()
@@ -37,6 +35,16 @@ class Factors:
 
     def update_df(self, df):
         self.df = df
+        self.df[['Size','BM','OP','INV','Mretwd']]= df[['Size','BM','OP','INV','Mretwd']].values.astype(float)
+
+
+    def update_df_Mretwd(self, year, month):
+        self.df.drop(['Mretwd', 'Trdmnt'], axis=1, inplace=True)
+        Mretwd_df = pd.read_excel('../data/stock/'+year+'-'+month+'.xlsx')
+        Mretwd_df['Stkcd'] = Mretwd_df['Stkcd'].astype(str)
+        Mretwd_df['Stkcd'] = Mretwd_df['Stkcd'].map(lambda x: (6-len(x))*'0' + x)
+        self.df = pd.merge(self.df, Mretwd_df, on='Stkcd')
+        self.df.drop('Msmvosd', axis=1, inplace=True)
 
     def get_groups(self):
         '''
@@ -44,42 +52,42 @@ class Factors:
         '''
         
         # 划分大小市值公司
-        self.df['Size_label'] = df['Size'].map(lambda x: 'B' if x >= df['Size'].median() else 'S')
+        self.df['Size_label'] = self.df['Size'].map(lambda x: 'B' if x >= self.df['Size'].median() else 'S')
     
         # 划分高、中、低账面市值比公司
-        BM_border_down, BM_border_up = df['BM'].quantile([0.3, 0.7])
-        self.df['BM_label'] = df['BM'].map(lambda x: 'H' if x >= BM_border_up else('L' if x <= BM_border_down  else 'N'))
+        BM_border_down, BM_border_up = self.df['BM'].quantile([0.3, 0.7])
+        self.df['BM_label'] = self.df['BM'].map(lambda x: 'H' if x >= BM_border_up else('L' if x <= BM_border_down  else 'N'))
         
         # 划分高、中、低营运利润率
-        OP_border_down, OP_border_up = df['OP'].quantile([0.3, 0.7])
-        self.df['OP_label'] = df['OP'].map(lambda x: 'R' if x >= OP_border_up else('W' if x <= OP_border_down  else 'N'))
+        OP_border_down, OP_border_up = self.df['OP'].quantile([0.3, 0.7])
+        self.df['OP_label'] = self.df['OP'].map(lambda x: 'R' if x >= OP_border_up else('W' if x <= OP_border_down  else 'N'))
 
         # 划分投资风格
-        INV_border_down, INV_border_up = df['INV'].quantile([0.3, 0.7])
-        self.df['INV_label'] = df['INV'].map(lambda x: 'A' if x >= INV_border_up else('C' if x <= INV_border_down  else 'N'))
+        INV_border_down, INV_border_up = self.df['INV'].quantile([0.3, 0.7])
+        self.df['INV_label'] = self.df['INV'].map(lambda x: 'A' if x >= INV_border_up else('C' if x <= INV_border_down  else 'N'))
 
         # 划分6个组合
-        self.df_SL = df.query('(Size_label=="S") & (BM_label=="L")')
-        self.df_SN_BM = df.query('(Size_label=="S") & (BM_label=="N")')
-        self.df_SH = df.query('(Size_label=="S") & (BM_label=="H")')
-        self.df_BL = df.query('(Size_label=="B") & (BM_label=="L")')
-        self.df_BN_BM = df.query('(Size_label=="B") & (BM_label=="N")')
-        self.df_BH = df.query('(Size_label=="B") & (BM_label=="H")')
+        self.df_SL = self.df.query('(Size_label=="S") & (BM_label=="L")')
+        self.df_SN_BM = self.df.query('(Size_label=="S") & (BM_label=="N")')
+        self.df_SH = self.df.query('(Size_label=="S") & (BM_label=="H")')
+        self.df_BL = self.df.query('(Size_label=="B") & (BM_label=="L")')
+        self.df_BN_BM = self.df.query('(Size_label=="B") & (BM_label=="N")')
+        self.df_BH = self.df.query('(Size_label=="B") & (BM_label=="H")')
 
         # 划分12个组合
-        self.df_SR = df.query('(Size_label=="S") & (OP_label=="R")')
-        self.df_SN_OP = df.query('(Size_label=="S") & (OP_label=="N")')
-        self.df_SW = df.query('(Size_label=="S") & (OP_label=="W")')
-        self.df_BR = df.query('(Size_label=="B") & (OP_label=="R")')
-        self.df_BN_OP = df.query('(Size_label=="B") & (OP_label=="N")')
-        self.df_BW = df.query('(Size_label=="B") & (OP_label=="W")')
+        self.df_SR = self.df.query('(Size_label=="S") & (OP_label=="R")')
+        self.df_SN_OP = self.df.query('(Size_label=="S") & (OP_label=="N")')
+        self.df_SW = self.df.query('(Size_label=="S") & (OP_label=="W")')
+        self.df_BR = self.df.query('(Size_label=="B") & (OP_label=="R")')
+        self.df_BN_OP = self.df.query('(Size_label=="B") & (OP_label=="N")')
+        self.df_BW = self.df.query('(Size_label=="B") & (OP_label=="W")')
 
-        self.df_SC = df.query('(Size_label=="S") & (INV_label=="C")')
-        self.df_SN_INV = df.query('(Size_label=="S") & (INV_label=="N")')
-        self.df_SA = df.query('(Size_label=="S") & (INV_label=="A")')
-        self.df_BC = df.query('(Size_label=="B") & (INV_label=="C")')
-        self.df_BN_INV = df.query('(Size_label=="B") & (INV_label=="N")')
-        self.df_BA = df.query('(Size_label=="B") & (INV_label=="A")')
+        self.df_SC = self.df.query('(Size_label=="S") & (INV_label=="C")')
+        self.df_SN_INV = self.df.query('(Size_label=="S") & (INV_label=="N")')
+        self.df_SA = self.df.query('(Size_label=="S") & (INV_label=="A")')
+        self.df_BC = self.df.query('(Size_label=="B") & (INV_label=="C")')
+        self.df_BN_INV = self.df.query('(Size_label=="B") & (INV_label=="N")')
+        self.df_BA = self.df.query('(Size_label=="B") & (INV_label=="A")')
     
     def get_factors(self):
         # # 计算各组流通市值加权收益率
